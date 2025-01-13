@@ -27,7 +27,7 @@ const About = () => {
               <img
                 className="img-fluid rounded"
                 loading="lazy"
-                src="https://askingtips.com/dl/getty/tmp/low_quality-CRG8kdj6be.jpg"
+                src="https://inotebook.in/assets/images/inotebook.png"
                 alt="Start writing notes now"
               />
             </div>

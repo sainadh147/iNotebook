@@ -4,8 +4,6 @@ import NoteItem from "./NoteItem";
 import AddNote from "./AddNote"; // Add this import
 import { useNavigate } from "react-router-dom";
 
-// (Rest of your code remains the same)
-
 const Notes = (props) => {
   let navigate = useNavigate();
   const context = useContext(noteContext);
@@ -20,13 +18,18 @@ const Notes = (props) => {
     } else {
       navigate("/login");
     }
-    // eslint-disable-next-line
-  }, []);
+  }, [getNotes, navigate]);
 
-  const filteredNotes = notes.filter((note) =>
-    note.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredNotes = (Array.isArray(notes) ? notes : []).filter((note) => {
+    const title = note.title ? note.title.toLowerCase() : "";
+    const description = note.description ? note.description.toLowerCase() : "";
+    return (
+      title.includes(searchQuery.toLowerCase()) ||
+      description.includes(searchQuery.toLowerCase())
+    );
+  });
+  
+  
   const sortedNotes = filteredNotes.sort((a, b) => {
     if (sortBy === "alphabetical") {
       return a.title.localeCompare(b.title);
@@ -58,6 +61,7 @@ const Notes = (props) => {
   const handleClick = (e) => {
     editNote(note.id, note.etitle, note.edescription, note.etag);
     refClose.current.click();
+    getNotes(); // Refresh the notes after editing
   };
 
   const onChange = (e) => {

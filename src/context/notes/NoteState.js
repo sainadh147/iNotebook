@@ -1,96 +1,68 @@
-import React from "react";
+import React, { useState } from "react";
 import NoteContext from "./noteContext";
-import { useState } from "react";
-
-//FOR EXPLANATION OF CONTEXT API
-
-// const NoteState = (props) => {
-//     //initial state
-//   const s1 = {
-//     name: "dsadsa",
-//     class: "5b"
-//   };
-//   const [state, setState] = useState(s1);
-//   const update = () => {
-//     setTimeout(() => {
-//       setState({
-//         name: "lksjkss",
-//         class: "52b",
-//       });
-//     }, 1000);
-//   };
-//   return (
-//     <NoteContext.Provider value={{state,update}}>
-//         {props.children}
-//     </NoteContext.Provider>
-//   );
-// };
 
 const NoteState = (props) => {
   const host = "http://localhost:4000";
   const notesInitial = [];
   const [notes, setNotes] = useState(notesInitial);
+  const [searchQuery, setSearchQuery] = useState(""); // For searching notes
+  const [sortBy, setSortBy] = useState("default"); // For sorting notes: "default", "alphabetical", "date"
 
-  //get all notes
+  // Get all notes
   const getNotes = async () => {
-    //API CALL
+    // API Call
     const response = await fetch(`${host}/api/notes/fetchallnotes`, {
       method: "GET",
       headers: {
         "Content-type": "application/json",
-        "auth-token":
-          localStorage.getItem('token'),
+        "auth-token": localStorage.getItem("token"),
       },
     });
     const json = await response.json();
     setNotes(json);
   };
 
+  // Add a note
   const addNote = async (title, description, tag) => {
     // API Call
-    const response = await fetch("http://localhost:4000/api/notes/addnote", {
+    const response = await fetch(`${host}/api/notes/addnote`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "auth-token":
-          localStorage.getItem('token'),
+        "auth-token": localStorage.getItem("token"),
       },
       body: JSON.stringify({ title, description, tag }),
     });
 
     const note = await response.json();
-    setNotes([...notes,note]);
+    setNotes([...notes, note]);
   };
 
-  //delete a note
+  // Delete a note
   const deleteNote = async (id) => {
     const response = await fetch(`${host}/api/notes/deletenote/${id}`, {
       method: "DELETE",
       headers: {
         "Content-type": "application/json",
-        "auth-token":
-          localStorage.getItem('token'),
+        "auth-token": localStorage.getItem("token"),
       },
     });
 
     const json = await response.json();
     console.log(json);
 
-    const newNotes = notes.filter((note) => {
-      return note._id !== id;
-    });
+    const newNotes = notes.filter((note) => note._id !== id);
     setNotes(newNotes);
   };
 
-  // edit a note
+  // Edit a note
   const editNote = async (id, title, description, tag) => {
-    //API CALL
+    // API Call
     const response = await fetch(`${host}/api/notes/updatenote/${id}`, {
       method: "PUT",
       headers: {
         "Content-type": "application/json",
-        "auth-token":
-          localStorage.getItem('token'),
+        "auth-token": localStorage.getItem("token"),
       },
       body: JSON.stringify({ title, description, tag }),
     });
@@ -99,27 +71,47 @@ const NoteState = (props) => {
     console.log(json);
 
     let newNotes = JSON.parse(JSON.stringify(notes));
-    //edit a note from client side
-    for (let index = 0; index < notes.length; index++) {
-      // const element = notes[index];
-      for (let index = 0; index < newNotes.length; index++) {
-        const element = newNotes[index];
-        if (element._id === id) {
-          element.title = title;
-          element.description = description;
-          element.tag = tag;
-          newNotes[index].title = title;
-          newNotes[index].description = description;
-          newNotes[index].tag = tag;
-          break;
-        }
+    for (let index = 0; index < newNotes.length; index++) {
+      const element = newNotes[index];
+      if (element._id === id) {
+        element.title = title;
+        element.description = description;
+        element.tag = tag;
+        break;
       }
     }
     setNotes(newNotes);
   };
+
+  // Filter notes based on search query
+  const filteredNotes = notes.filter((note) =>
+    note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    note.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort notes based on selected criteria
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    if (sortBy === "alphabetical") {
+      return a.title.localeCompare(b.title);
+    } else if (sortBy === "date") {
+      return new Date(b.date) - new Date(a.date);
+    }
+    return 0; // Default order
+  });
+
   return (
     <NoteContext.Provider
-      value={{ notes, addNote, deleteNote, editNote, getNotes }}
+      value={{
+        notes: sortedNotes,
+        addNote,
+        deleteNote,
+        editNote,
+        getNotes,
+        searchQuery,
+        setSearchQuery,
+        sortBy,
+        setSortBy,
+      }}
     >
       {props.children}
     </NoteContext.Provider>

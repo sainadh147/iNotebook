@@ -1,26 +1,40 @@
-import React from "react";
-import { useContext, useRef } from "react";
+import React, { useContext, useRef, useState, useEffect } from "react";
 import noteContext from "../context/notes/noteContext";
 import NoteItem from "./NoteItem";
-import AddNote from "./AddNote";
-import { useEffect, useState } from "react";
+import AddNote from "./AddNote"; // Add this import
 import { useNavigate } from "react-router-dom";
+
+// (Rest of your code remains the same)
 
 const Notes = (props) => {
   let navigate = useNavigate();
   const context = useContext(noteContext);
-  const { notes, getNotes , editNote} = context;
+  const { notes, getNotes, editNote } = context;
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("default");
+
   useEffect(() => {
-    if(localStorage.getItem('token'))
-    {
+    if (localStorage.getItem("token")) {
       getNotes();
-    }
-    else
-    {
+    } else {
       navigate("/login");
     }
     // eslint-disable-next-line
   }, []);
+
+  const filteredNotes = notes.filter((note) =>
+    note.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sortedNotes = filteredNotes.sort((a, b) => {
+    if (sortBy === "alphabetical") {
+      return a.title.localeCompare(b.title);
+    } else if (sortBy === "date") {
+      return new Date(b.date) - new Date(a.date);
+    }
+    return 0;
+  });
 
   const ref = useRef(null);
   const refClose = useRef(null);
@@ -42,8 +56,7 @@ const Notes = (props) => {
   };
 
   const handleClick = (e) => {
-    // console.log("Updating the note...", note);
-    editNote(note.id,note.etitle,note.edescription,note.etag);
+    editNote(note.id, note.etitle, note.edescription, note.etag);
     refClose.current.click();
   };
 
@@ -95,7 +108,6 @@ const Notes = (props) => {
                     id="etitle"
                     name="etitle"
                     value={note.etitle}
-                    aria-describedby="emailHelp"
                     onChange={onChange}
                   />
                 </div>
@@ -150,10 +162,30 @@ const Notes = (props) => {
 
       <div className="row my-3">
         <h2>Your Notes</h2>
-        <div className="container mx-2 fw-bold my-2">
-          {notes.length === 0 && 'Make some notes!!'}
+
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ flex: "1" }}
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ flex: "1" }}
+          >
+            <option value="default">Default</option>
+            <option value="alphabetical">Alphabetical</option>
+            <option value="date">Date</option>
+          </select>
         </div>
-        {notes.map((note) => {
+
+        <div className="container mx-2 fw-bold my-2">
+          {sortedNotes.length === 0 && "Make some notes!!"}
+        </div>
+        {sortedNotes.map((note) => {
           return (
             <NoteItem key={note._id} updateNote={updateNote} note={note} />
           );
